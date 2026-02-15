@@ -12,6 +12,9 @@ const ctx = @import("ctx.zig");
 pub fn makeWindow(app: *gtk.Application) *gtk.Window {
     const text_view = gsv.View.new();
     const gtk_text_view = text_view.as(gtk.TextView);
+    gtk_text_view.setMonospace(1);
+    const text_view_wiget = text_view.as(gtk.Widget);
+    text_view_wiget.addCssClass("monospace");
 
     const header_bar = adw.HeaderBar.new();
     header_bar.setShowEndTitleButtons(1);
