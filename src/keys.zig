@@ -6,6 +6,9 @@ const gtk = @import("gtk");
 const adw = @import("adwaita");
 const gsv = @import("gtksourceview");
 
+const nav = @import("nav.zig");
+const ctx = @import("ctx.zig");
+
 const KeyHandler = *const fn (widget: *gtk.Widget) bool;
 
 pub fn addKey(
@@ -35,5 +38,26 @@ pub fn addKey(
         );
         const shortcut = gtk.Shortcut.new(trigger, action.as(gtk.ShortcutAction));
         controller.addShortcut(shortcut);
+    }
+}
+
+pub fn addDefaultKeys(controller: *gtk.ShortcutController) void {
+    inline for (@typeInfo(nav.funcs).@"struct".decls) |decl| {
+        const key = @field(nav.funcs, decl.name);
+        if (@typeInfo(key) == .@"struct") {
+            const func = @field(key, "func");
+            const accel = @field(key, "accel");
+            addKey(
+                controller,
+                accel,
+                struct {
+                    pub fn cb(_widget: *gtk.Widget) bool {
+                        _ = _widget;
+                        const context = ctx.getGlobalContext();
+                        return func(context);
+                    }
+                }.cb,
+            );
+        }
     }
 }

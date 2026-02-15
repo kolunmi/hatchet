@@ -5,6 +5,7 @@ const gio = @import("gio");
 const gobject = @import("gobject");
 const glib = @import("glib");
 
+const ctx = @import("ctx.zig");
 const gui = @import("gui.zig");
 
 pub const HtApplication = extern struct {
