@@ -14,7 +14,7 @@ pub const Context = struct {
     const BufsType = std.ArrayList(*gsv.Buffer);
     bufs: BufsType,
 
-    active_buf: ?*gsv.Buffer,
+    active_view: ?*gsv.View,
 
     pub fn create() !*Context {
         var bufs = try BufsType.initCapacity(allocator, 8);
@@ -25,7 +25,7 @@ pub const Context = struct {
 
         self.* = .{
             .bufs = bufs,
-            .active_buf = null,
+            .active_view = null,
         };
 
         return self;

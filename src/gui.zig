@@ -11,18 +11,17 @@ const ctx = @import("ctx.zig");
 const nav = @import("nav.zig");
 
 pub fn makeWindow(app: *gtk.Application) *gtk.Window {
-    const text_view = makeSourceView(.{nav.main_view_funcs});
-    const gtk_text_view = text_view.as(gtk.TextView);
+    const view = makeSourceView(.{nav.main_view_funcs});
 
     const overlay = gtk.Overlay.new();
-    overlay.setChild(text_view.as(gtk.Widget));
+    overlay.setChild(view.as(gtk.Widget));
 
     const header_bar = adw.HeaderBar.new();
     header_bar.setShowEndTitleButtons(1);
 
     const toolbar_view = adw.ToolbarView.new();
     toolbar_view.setContent(overlay.as(gtk.Widget));
-    toolbar_view.addTopBar(header_bar.as(gtk.Widget));
+    toolbar_view.addBottomBar(header_bar.as(gtk.Widget));
 
     const win = adw.Window.new();
     win.setContent(toolbar_view.as(gtk.Widget));
@@ -32,9 +31,7 @@ pub fn makeWindow(app: *gtk.Application) *gtk.Window {
     gtk_win.setApplication(app);
 
     const context = ctx.getGlobalContext();
-    // can't use `.as()` here since subclass checking apparently doesn't work
-    // across packages in the gir bindings we're using
-    context.active_buf = @ptrCast(gtk_text_view.getBuffer());
+    context.active_view = view;
 
     return win.as(gtk.Window);
 }
@@ -46,9 +43,9 @@ pub fn makePicker(
     map: PickerMap,
     name: [:0]const u8,
 ) !*gtk.Frame {
-    const text_view = makeSourceView(.{});
-    const gtk_text_view = text_view.as(gtk.TextView);
-    const buffer = gtk_text_view.getBuffer();
+    const view = makeSourceView(.{});
+    const gtk_view = view.as(gtk.TextView);
+    const buffer = gtk_view.getBuffer();
 
     var iterator = map.iterator();
     while (iterator.next()) |entry| {
@@ -62,12 +59,42 @@ pub fn makePicker(
     }
 
     const frame = gtk.Frame.new(name);
-    frame.setChild(text_view.as(gtk.Widget));
+    frame.setChild(view.as(gtk.Widget));
 
     const context = ctx.getGlobalContext();
-    context.active_buf = @ptrCast(buffer);
+    context.active_view = view;
+
+    var iter: gtk.TextIter = undefined;
+    buffer.getStartIter(&iter);
+    buffer.placeCursor(&iter);
 
     return frame;
+}
+
+pub fn getActiveWidgets() struct {
+    window: ?*adw.Window,
+    overlay: ?*gtk.Overlay,
+    main_view: ?*gtk.TextView,
+} {
+    var window: ?*adw.Window = null;
+    var overlay: ?*gtk.Overlay = null;
+    var main_view: ?*gtk.TextView = null;
+
+    if (gio.Application.getDefault()) |app| {
+        const gtk_app: *gtk.Application = @ptrCast(app);
+        if (gtk_app.getActiveWindow()) |win| {
+            window = @ptrCast(win);
+            const toolbar_view: *adw.ToolbarView = @ptrCast(window.?.getContent().?);
+            overlay = @ptrCast(toolbar_view.getContent().?);
+            main_view = @ptrCast(overlay.?.getChild());
+        }
+    }
+
+    return .{
+        .window = window,
+        .overlay = overlay,
+        .main_view = main_view,
+    };
 }
 
 fn makeSourceView(keymaps: anytype) *gsv.View {
