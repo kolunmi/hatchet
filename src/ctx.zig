@@ -6,6 +6,8 @@ const gtk = @import("gtk");
 const adw = @import("adwaita");
 const gsv = @import("gtksourceview");
 
+pub const ActionFunc = *const fn (*Context) anyerror!bool;
+
 pub const allocator = std.heap.c_allocator;
 
 pub const Context = struct {

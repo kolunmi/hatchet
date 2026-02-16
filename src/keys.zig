@@ -41,9 +41,12 @@ pub fn addKey(
     }
 }
 
-pub fn addDefaultKeys(controller: *gtk.ShortcutController) void {
-    inline for (@typeInfo(nav.funcs).@"struct".decls) |decl| {
-        const key = @field(nav.funcs, decl.name);
+pub fn addKeys(
+    controller: *gtk.ShortcutController,
+    funcs: type,
+) void {
+    inline for (@typeInfo(funcs).@"struct".decls) |decl| {
+        const key = @field(funcs, decl.name);
         if (@typeInfo(key) == .@"struct") {
             const func = @field(key, "func");
             const accel = @field(key, "accel");
@@ -54,7 +57,7 @@ pub fn addDefaultKeys(controller: *gtk.ShortcutController) void {
                     pub fn cb(_widget: *gtk.Widget) bool {
                         _ = _widget;
                         const context = ctx.getGlobalContext();
-                        return func(context);
+                        return func(context) catch @panic("Key press caused an unrecoverable error");
                     }
                 }.cb,
             );
