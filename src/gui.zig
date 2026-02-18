@@ -51,9 +51,7 @@ pub fn makePicker(
     while (iterator.next()) |entry| {
         var iter: gtk.TextIter = undefined;
         buffer.getEndIter(&iter);
-        const key = try ctx.allocator.dupeZ(u8, entry.key_ptr.*);
-        defer ctx.allocator.free(key);
-        buffer.insert(&iter, key.ptr, -1);
+        buffer.insert(&iter, @ptrCast(entry.key_ptr.ptr), @intCast(entry.key_ptr.len));
         iter.forwardToEnd();
         buffer.insert(&iter, "\n", 1);
     }
